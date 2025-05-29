@@ -260,7 +260,7 @@
         .rank-1 { background: #FFD700; }
         .rank-2 { background: #C0C0C0; }
         .rank-3 { background: #CD7F32; }
-        .rank-other { background: #667eea; }
+        .rank-default { background: #667eea; }
 
         .user-info {
             display: flex;
@@ -527,7 +527,7 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="totalTime">0</div>
-                            <div class="stat-label">Total Time (hours)</div>
+                            <div class="stat-label">Total Time (minutes)</div>
                         </div>
                     </div>
                 </div>
@@ -576,7 +576,7 @@
 
         const commonWords = [
             'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use',
-            'about', 'after', 'again', 'below', 'could', 'every', 'first', 'found', 'great', 'group', 'house', 'know', 'large', 'last', 'left', 'life', 'little', 'long', 'made', 'make', 'man', 'move', 'much', 'must', 'name', 'need', 'never', 'next', 'night', 'number', 'order', 'over', 'own', 'part', 'place', 'point', 'right', 'same', 'seem', 'small', 'sound', 'still', 'such', 'take', 'than', 'them', 'think', 'this', 'those', 'through', 'time', 'very', 'want', 'water', 'well', 'went', 'were', 'what', 'where', 'which', 'while', 'with', 'work', 'world', 'would', 'write', 'year', 'young'
+            'about', 'after', 'again', 'below', 'could', 'every', 'first', 'found', 'great', 'group', 'house', 'know', 'large', 'last', 'left', 'life', 'little', 'long', 'made', 'make', 'move', 'much', 'must', 'name', 'need', 'never', 'next', 'night', 'number', 'order', 'over', 'own', 'part', 'place', 'point', 'right', 'same', 'seem', 'small', 'sound', 'still', 'such', 'take', 'than', 'them', 'think', 'this', 'those', 'through', 'time', 'very', 'want', 'water', 'well', 'went', 'were', 'what', 'where', 'which', 'while', 'with', 'work', 'world', 'would', 'write', 'year', 'young'
         ];
 
         // Authentication functions
@@ -591,9 +591,9 @@
         }
 
         function register() {
-            const username = document.getElementById('regUsername').value;
+            const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
-            const email = document.getElementById('regEmail').value;
+            const email = document.getElementById('regEmail').value.trim();
 
             if (!username || !password || !email) {
                 alert('Please fill in all fields');
@@ -621,13 +621,13 @@
                 }
             };
 
-            localStorage.setItem('typingUsers', JSON.stringify(users));
+            saveUsers();
             alert('Account created successfully!');
             showLogin();
         }
 
         function login() {
-            const username = document.getElementById('loginUsername').value;
+            const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
             if (!users[username] || users[username].password !== password) {
@@ -652,6 +652,10 @@
             showLogin();
         }
 
+        function saveUsers() {
+            localStorage.setItem('typingUsers', JSON.stringify(users));
+        }
+
         // Navigation
         function showSection(section) {
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
@@ -665,6 +669,32 @@
             } else if (section === 'progress') {
                 updateProgressSection();
             }
+        }
+
+        // User interface updates
+        function updateUserInterface() {
+            if (!currentUser) return;
+            
+            const user = users[currentUser];
+            document.getElementById('userLevel').textContent = `Level ${user.level}`;
+            
+            const progressPercent = (user.experience % 100);
+            document.getElementById('levelProgress').style.width = progressPercent + '%';
+        }
+
+        function addExperience(points) {
+            if (!currentUser) return;
+            
+            users[currentUser].experience += points;
+            const newLevel = Math.floor(users[currentUser].experience / 100) + 1;
+            
+            if (newLevel > users[currentUser].level) {
+                users[currentUser].level = newLevel;
+                alert(`Congratulations! You've reached Level ${newLevel}!`);
+            }
+            
+            saveUsers();
+            updateUserInterface();
         }
 
         // Practice Mode
@@ -698,7 +728,7 @@
             
             practiceTimer = setInterval(updatePracticeStats, 100);
             
-            input.addEventListener('input', handlePracticeInput);
+            input.oninput = handlePracticeInput;
         }
 
         function handlePracticeInput(e) {
@@ -796,30 +826,10 @@
                 }
             }, 1000);
             
-            input.addEventListener('input', handleTestInput);
+            input.oninput = handleTestInput;
         }
 
         function generateTestText() {
             let text = '';
             for (let i = 0; i < 200; i++) {
-                text += commonWords[Math.floor(Math.random() * commonWords.length)] + ' ';
-            }
-            return text.trim();
-        }
-
-        function handleTestInput(e) {
-            if (!testActive) return;
-            
-            const input = e.target.value;
-            const spans = document.querySelectorAll('#testText span');
-            
-            spans.forEach((span, index) => {
-                span.className = '';
-                if (index < input.length) {
-                    if (input[index] === span.textContent) {
-                        span.classList.add('correct');
-                    } else {
-                        span.classList.add('incorrect');
-                    }
-                } else if (index === input.length && index < spans.length) {
-                    span.classList
+                text += commonWords[
